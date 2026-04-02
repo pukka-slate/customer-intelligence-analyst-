@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Slate & Sachi — Customer Intelligence</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --slate:       #2d3748;
+      --slate-light: #4a5568;
+      --accent:      #c9a96e;
+      --bg:          #f7f6f3;
+      --surface:     #ffffff;
+      --border:      #e2ddd6;
+      --text:        #1a202c;
+      --muted:       #718096;
+      --success:     #2f855a;
+      --error:       #c53030;
+      --radius:      6px;
+    }
+
+    body {
+      font-family: 'Georgia', serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--slate);
+      color: #fff;
+      padding: 28px 40px;
+      display: flex;
+      align-items: baseline;
+      gap: 16px;
+    }
+    header h1 {
+      font-size: 1.35rem;
+      font-weight: normal;
+      letter-spacing: 0.04em;
+    }
+    header h1 span {
+      color: var(--accent);
+    }
+    header p {
+      font-size: 0.8rem;
+      color: #a0aec0;
+      font-family: 'Helvetica Neue', sans-serif;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    /* ── Main layout ── */
+    main {
+      flex: 1;
+      max-width: 900px;
+      width: 100%;
+      margin: 48px auto;
+      padding: 0 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+
+    /* ── Input card ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+    }
+
+    .card label {
+      display: block;
+      font-family: 'Helvetica Neue', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 220px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      color: var(--text);
+      background: var(--bg);
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    textarea:focus {
+      border-color: var(--accent);
+    }
+    textarea::placeholder {
+      color: #a0aec0;
+    }
+
+    .hint {
+      margin-top: 8px;
+      font-family: 'Helvetica Neue', sans-serif;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    /* ── Button ── */
+    .actions {
+      margin-top: 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    button {
+      background: var(--slate);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      padding: 12px 32px;
+      font-family: 'Helvetica Neue', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.15s;
+    }
+    button:hover:not(:disabled) { background: var(--slate-light); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .status {
+      font-family: 'Helvetica Neue', sans-serif;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+    .status.error { color: var(--error); }
+
+    /* ── Report output ── */
+    #report-section {
+      display: none;
+    }
+    #report-section.visible {
+      display: block;
+    }
+
+    .report-header {
+      font-family: 'Helvetica Neue', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .report-header .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+    .report-header .dot.done {
+      background: var(--success);
+      animation: none;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    #report {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px 36px;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      font-size: 0.88rem;
+      line-height: 1.75;
+      color: var(--text);
+      white-space: pre-wrap;
+      word-break: break-word;
+      min-height: 100px;
+    }
+
+    /* Markdown-like styling applied via JS */
+    #report h1 { font-family: Georgia, serif; font-size: 1.3rem; font-weight: normal; margin: 0 0 20px; color: var(--slate); border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+    #report h2 { font-family: Georgia, serif; font-size: 1rem; font-weight: normal; margin: 28px 0 10px; color: var(--slate); }
+    #report h3 { font-family: 'Helvetica Neue', sans-serif; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 20px 0 8px; }
+    #report strong { font-weight: 600; color: var(--slate); }
+    #report hr { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+    #report table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 0.84rem; }
+    #report th { background: var(--bg); text-align: left; padding: 8px 12px; font-family: 'Helvetica Neue', sans-serif; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); border-bottom: 2px solid var(--border); }
+    #report td { padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+
+    /* Copy button */
+    .copy-btn {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 6px 14px;
+      font-size: 0.75rem;
+      margin-left: auto;
+    }
+    .copy-btn:hover:not(:disabled) { background: var(--bg); color: var(--text); }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 24px;
+      font-family: 'Helvetica Neue', sans-serif;
+      font-size: 0.72rem;
+      color: #a0aec0;
+      letter-spacing: 0.04em;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Slate <span>&</span> Sachi</h1>
+  <p>Customer Intelligence Agent</p>
+</header>
+
+<main>
+  <div class="card">
+    <label for="input">Input</label>
+    <textarea
+      id="input"
+      placeholder="Paste anything here — a LinkedIn profile, sales call notes, intake form response, email thread, or a description of someone you're trying to understand..."
+      autofocus
+    ></textarea>
+    <p class="hint">LinkedIn profiles, call transcripts, intake forms, posts, or any combination.</p>
+    <div class="actions">
+      <button id="btn" onclick="runAnalysis()">Generate Report</button>
+      <span class="status" id="status"></span>
+    </div>
+  </div>
+
+  <div id="report-section">
+    <div class="report-header">
+      <span class="dot" id="dot"></span>
+      <span id="report-label">Generating report…</span>
+      <button class="copy-btn" onclick="copyReport()" id="copy-btn" style="display:none">Copy</button>
+    </div>
+    <div id="report"></div>
+  </div>
+</main>
+
+<footer>Slate &amp; Sachi &mdash; Customer Intelligence Agent v2.0</footer>
+
+<script>
+  let rawText = "";
+
+  async function runAnalysis() {
+    const input = document.getElementById("input").value.trim();
+    if (!input) {
+      setStatus("Please paste some input first.", true);
+      return;
+    }
+
+    const btn = document.getElementById("btn");
+    const reportEl = document.getElementById("report");
+    const section = document.getElementById("report-section");
+    const dot = document.getElementById("dot");
+    const label = document.getElementById("report-label");
+    const copyBtn = document.getElementById("copy-btn");
+
+    // Reset state
+    rawText = "";
+    reportEl.innerHTML = "";
+    btn.disabled = true;
+    copyBtn.style.display = "none";
+    dot.classList.remove("done");
+    label.textContent = "Generating report…";
+    setStatus("Thinking…");
+    section.classList.add("visible");
+    reportEl.scrollIntoView({ behavior: "smooth", block: "start" });
+
+    try {
+      const formData = new FormData();
+      formData.append("input", input);
+
+      const response = await fetch("/analyse", { method: "POST", body: formData });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        setStatus(errText || "Something went wrong.", true);
+        btn.disabled = false;
+        return;
+      }
+
+      setStatus("");
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        rawText += chunk;
+        reportEl.innerHTML = renderMarkdown(rawText);
+      }
+
+      // Done
+      dot.classList.add("done");
+      label.textContent = "Report complete";
+      copyBtn.style.display = "block";
+      setStatus("");
+
+    } catch (err) {
+      setStatus("Connection error. Is the server running?", true);
+    }
+
+    btn.disabled = false;
+  }
+
+  function setStatus(msg, isError = false) {
+    const el = document.getElementById("status");
+    el.textContent = msg;
+    el.className = "status" + (isError ? " error" : "");
+  }
+
+  function copyReport() {
+    navigator.clipboard.writeText(rawText).then(() => {
+      const btn = document.getElementById("copy-btn");
+      btn.textContent = "Copied!";
+      setTimeout(() => btn.textContent = "Copy", 2000);
+    });
+  }
+
+  // Very lightweight markdown renderer (no dependencies)
+  function renderMarkdown(text) {
+    const lines = text.split("\n");
+    let html = "";
+    let inTable = false;
+    let tableHtml = "";
+
+    for (let i = 0; i < lines.length; i++) {
+      let line = lines[i];
+
+      // Horizontal rule
+      if (/^-{3,}$/.test(line.trim())) {
+        if (inTable) { html += tableHtml + "</table>"; inTable = false; tableHtml = ""; }
+        html += "<hr>";
+        continue;
+      }
+
+      // Headings
+      if (line.startsWith("### ")) {
+        html += `<h3>${esc(line.slice(4))}</h3>`;
+        continue;
+      }
+      if (line.startsWith("## ")) {
+        html += `<h2>${esc(line.slice(3))}</h2>`;
+        continue;
+      }
+      if (line.startsWith("# ")) {
+        html += `<h1>${esc(line.slice(2))}</h1>`;
+        continue;
+      }
+
+      // Table row
+      if (line.trim().startsWith("|")) {
+        const cells = line.trim().split("|").filter((_, i, a) => i > 0 && i < a.length - 1);
+        const isSeparator = cells.every(c => /^[-: ]+$/.test(c));
+        if (!inTable) {
+          inTable = true;
+          tableHtml = "<table><thead><tr>" + cells.map(c => `<th>${esc(c.trim())}</th>`).join("") + "</tr></thead><tbody>";
+          continue;
+        }
+        if (isSeparator) continue;
+        tableHtml += "<tr>" + cells.map(c => `<td>${inlineFormat(c.trim())}</td>`).join("") + "</tr>";
+        continue;
+      } else if (inTable) {
+        html += tableHtml + "</tbody></table>";
+        inTable = false;
+        tableHtml = "";
+      }
+
+      // Empty line
+      if (line.trim() === "") {
+        html += "\n";
+        continue;
+      }
+
+      // Default: inline-formatted text
+      html += inlineFormat(line) + "\n";
+    }
+
+    if (inTable) html += tableHtml + "</tbody></table>";
+    return html;
+  }
+
+  function inlineFormat(text) {
+    return esc(text)
+      .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+      .replace(/\*(.+?)\*/g, "<em>$1</em>")
+      .replace(/_(.+?)_/g, "<em>$1</em>")
+      .replace(/`(.+?)`/g, "<code>$1</code>");
+  }
+
+  function esc(str) {
+    return str
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  }
+
+  // Allow Cmd/Ctrl+Enter to submit
+  document.getElementById("input").addEventListener("keydown", e => {
+    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") runAnalysis();
+  });
+</script>
+
+</body>
+</html>
