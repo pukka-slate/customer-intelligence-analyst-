@@ -208,6 +208,36 @@
     #report th { background: var(--bg); text-align: left; padding: 8px 12px; font-family: 'Helvetica Neue', sans-serif; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); border-bottom: 2px solid var(--border); }
     #report td { padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
 
+    /* ── Agent tabs ── */
+    .agent-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+    .agent-tab {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 6px 16px;
+      font-family: 'Helvetica Neue', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .agent-tab:hover:not(.active) {
+      border-color: var(--slate-light);
+      color: var(--slate);
+    }
+    .agent-tab.active {
+      background: var(--slate);
+      color: #fff;
+      border-color: var(--slate);
+    }
+
     /* Copy button */
     .copy-btn {
       background: transparent;
@@ -240,13 +270,25 @@
 
 <main>
   <div class="card">
-    <label for="input">Input</label>
+    <label>Agent</label>
+    <div class="agent-tabs" id="agent-tabs">
+      {% for agent in agents %}
+      <button
+        class="agent-tab {% if loop.first %}active{% endif %}"
+        data-id="{{ agent.id }}"
+        data-placeholder="{{ agent.placeholder }}"
+        onclick="selectAgent(this)"
+      >{{ agent.name }}</button>
+      {% endfor %}
+    </div>
+
+    <label for="input" style="margin-top:20px">Input</label>
     <textarea
       id="input"
-      placeholder="Paste anything here — a LinkedIn profile, sales call notes, intake form response, email thread, or a description of someone you're trying to understand..."
+      placeholder="{{ agents[0].placeholder }}"
       autofocus
     ></textarea>
-    <p class="hint">LinkedIn profiles, call transcripts, intake forms, posts, or any combination.</p>
+    <p class="hint" id="hint">Paste whatever you have — the agent will extract what it needs.</p>
     <div class="actions">
       <button id="btn" onclick="runAnalysis()">Generate Report</button>
       <span class="status" id="status"></span>
@@ -267,6 +309,14 @@
 
 <script>
   let rawText = "";
+  let activeAgentId = document.querySelector(".agent-tab.active")?.dataset.id || "";
+
+  function selectAgent(tab) {
+    document.querySelectorAll(".agent-tab").forEach(t => t.classList.remove("active"));
+    tab.classList.add("active");
+    activeAgentId = tab.dataset.id;
+    document.getElementById("input").placeholder = tab.dataset.placeholder;
+  }
 
   async function runAnalysis() {
     const input = document.getElementById("input").value.trim();
@@ -296,6 +346,7 @@
     try {
       const formData = new FormData();
       formData.append("input", input);
+      formData.append("agent", activeAgentId);
 
       const response = await fetch("/analyse", { method: "POST", body: formData });
 
